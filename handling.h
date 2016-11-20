@@ -14,5 +14,6 @@
 #define SERVER_PORT	(80)
 
 void * handle_clnt(void * arg);
+int get_http_size(char * msg, int recv_len);
 
 #endif
