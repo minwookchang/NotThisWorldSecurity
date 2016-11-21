@@ -9,11 +9,12 @@
 #include <sys/socket.h>
 #include <pthread.h>
 
+//#include "mutex.h"
+
 #define MSG_SIZE	(2048)
-#define SERVER_ADDRESS	("127.0.0.1")
-#define SERVER_PORT	(80)
 
 void * handle_clnt(void * arg);
-int get_http_size(char * msg, int recv_len);
+int get_http_size(char * msg, int recv_len, int clnt_sock);
+void close_all(int serv_sock, int clnt_sock);
 
 #endif
