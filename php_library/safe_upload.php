@@ -1,8 +1,9 @@
 <?php 
-
+//파일명 중복시 파일명 뒤에 (n) 추가
 //file : $_FILES 객체
 //path : 저장 경로
 //max_size : 파일 최대 크기
+//성공시 파일 경로 반환
 
 function safe_upload($file, $path, $max_size = 2147483647){
   //path validation
@@ -36,7 +37,7 @@ function safe_upload($file, $path, $max_size = 2147483647){
 
   // move_uploaded_file은 임시 저장되어 있는 파일을 ./uploads 디렉토리로 이동합니다.
   if(move_uploaded_file($file['tmp_name'], $uploadfile)) {
-    return "성공적으로 업로드 되었습니다.";
+    return $uploadfile;
   }
   else {
     return "파일 업로드 실패입니다.";
