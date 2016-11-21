@@ -30,7 +30,7 @@ function safe_upload($file, $path, $max_size = 2147483647){
   $path_parts = pathinfo($uploadfile);
 
   while(file_exists($uploadfile)){
-    $uploadfile =  $path_parts['dirname'] . $path_parts['filename'] . " (" . $file_counter++ . ")" . $path_parts['extension'];
+    $uploadfile =  $path . $path_parts['filename'] . " (" . $file_counter++ . ")" . $path_parts['extension'];
   }
 
 
