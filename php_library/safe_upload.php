@@ -25,6 +25,15 @@ function safe_upload($file, $path, $max_size = 2147483647){
   //경로 지정
   $uploadfile = $path . $file_name;
 
+  //파일 이름 재설정
+  $file_counter = 1;
+  $path_parts = pathinfo($uploadfile);
+
+  while(file_exists($uploadfile)){
+    $uploadfile =  $path_parts['dirname'] . $path_parts['filename'] . " (" . $file_counter++ . ")" . $path_parts['extension'];
+  }
+
+
   // move_uploaded_file은 임시 저장되어 있는 파일을 ./uploads 디렉토리로 이동합니다.
   if(move_uploaded_file($file['tmp_name'], $uploadfile)) {
     return "성공적으로 업로드 되었습니다.";
