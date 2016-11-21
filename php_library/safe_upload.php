@@ -6,16 +6,19 @@
 
 function safe_upload($file, $path, $max_size = 2147483647){
 	//path validation
-	//if()
+  if(!is_dir($path)) return "존재하지 않는 경로입니다.";
+  
+  //경로 끝에 /가 없으면 추가해줌
+  if($path[strlen($path)-1] !== "/") $path.="/";
 
-	if($max_size < $file['size']) return "업로드 파일이 지정된 파일크기보다 큽니다.\n";
+	if($max_size < $file['size']) return "업로드 파일이 지정된 파일크기보다 큽니다.";
 
 	if(($file['error'] > 0) || ($file['size'] <= 0)) return "파일 업로드에 실패하였습니다.";
 
 	// HTTP post로 전송된 것인지 체크합니다.
-    if(!is_uploaded_file($file['tmp_name'])) return "HTTP로 전송된 파일이 아닙니다.";
+  if(!is_uploaded_file($file['tmp_name'])) return "HTTP로 전송된 파일이 아닙니다.";
 
-    //확장자 체크
+  //확장자 체크
 
 
 	//경로 지정
