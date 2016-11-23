@@ -14,12 +14,13 @@
 //-6 : php 또는 html 파일
 function safe_upload($file, $path, $max_size = 2147483647){
   $hash_opt = ['salt' => 'ThisIsNotRealWorldSalt'];
+  $iterator = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'?'\\':'/';
 
   //path validation
   if(!is_dir($path)) return -2;
   
   //경로 끝에 /가 없으면 추가해줌
-  if($path[strlen($path)-1] !== '/') $path.='/';
+  if($path[strlen($path)-1] !== $iterator) $path.=$iterator;
 
   if($max_size < $file['size']) return -3;
 
@@ -48,7 +49,7 @@ function safe_upload($file, $path, $max_size = 2147483647){
 
   //move_uploaded_file은 임시 저장되어 있는 파일을 ./uploads 디렉토리로 이동합니다.
   if(move_uploaded_file($file['tmp_name'], $uploadfile)) {
-    return realpath($path) .'/'. $file_name. '.'. $extension;
+    return realpath($path) .$iterator. $file_name. '.'. $extension;
   }
   else {
     return -1;
