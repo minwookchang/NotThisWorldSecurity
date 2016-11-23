@@ -7,6 +7,10 @@
 #define CHARPERLINE 500
 #define CHARPERWORD 100
 
+// 지우고 on 기능 추가하기
+// - 1개만 있으면 3줄 지우고
+// - 여러개 있으면 line을 지우고
+
 EngineOff::EngineOff()
 {
 }
@@ -26,7 +30,10 @@ int EngineOff::exec(char* _path)
 
 	//file read
 	pFile = fopen(_path, ("rb"));
-
+	if (pFile == NULL) {
+		cout << "Not open" << endl;
+		return 0;
+	}
 	long totnum = 0;
 	long curnum = 0;
 	int flag = 0;
@@ -93,7 +100,10 @@ int EngineOff::exec(char* _path)
 		fclose(pFile);
 
 		pFile = fopen(_path, "a");
-
+		if (pFile == NULL) {
+			cout << "Not open" << endl;
+			return 0;
+		}
 		printf("final output\n%s\n%s\n%s", str.c_str(), stroff.c_str(), strend.c_str());
 		fprintf(pFile, "%s\n%s\n%s",str.c_str(),stroff.c_str(),strend.c_str());
 		
@@ -112,21 +122,4 @@ int EngineOff::exec(char* _path)
 		return 0;
 
 	}
-	//if no engine off
-	//then write
-
-	//이렇게 같은 파일 열고 써도 되나
-
-
-
 }
-
-
-
-/*
-ofstream fout;
-fout.open(_path, ios::app);
-fout << str << "\n\tphp_admin_value engine off\n</Directory>" << endl;
-fout.close();
-
-*/
