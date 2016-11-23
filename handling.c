@@ -6,6 +6,10 @@ void * handle_clnt(void * arg) {
 	int clnt_sock=*(int *)arg;
 	struct timeval tv_clnt2pass = {120, 0};	// it can vary
 	struct timeval tv_serv2pass = {30, 0};	// it can vary
+	/* TODO
+		ERROR CODE implemented
+	*/
+	int ERROR_CODE=0;
 
 	//server connection
 	int serv_sock;
@@ -14,8 +18,9 @@ void * handle_clnt(void * arg) {
 	//pthread_mutex_unlock(&fd_mutx);
 	if (serv_sock < 0) {
 		fputs("server socket() error\n", stderr);
-		close_all(serv_sock, clnt_sock);
-		return NULL;
+		ERROR_CODE = ERROR_S_SOCK_CREATION;
+		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+			return NULL;
 	}
 	struct sockaddr_in serv_addr;
 	memset(&serv_addr, 0, sizeof(serv_addr));
@@ -24,8 +29,9 @@ void * handle_clnt(void * arg) {
 	serv_addr.sin_port = htons(SERVER_PORT_NO);
 	if (connect(serv_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
 		fputs("server connect() error\n", stderr);
-		close_all(serv_sock, clnt_sock);
-		return NULL;
+		ERROR_CODE = ERROR_S_CONNECTION;
+		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+			return NULL;
 	}
 
 	//requesting loop
@@ -36,16 +42,18 @@ void * handle_clnt(void * arg) {
 	int current_size = 0;
 	if(setsockopt(clnt_sock, SOL_SOCKET, SO_RCVTIMEO, &tv_clnt2pass, sizeof(tv_clnt2pass))==-1) {
 		printf("fd#%d socket option failed\n", clnt_sock);
-		close_all(serv_sock, clnt_sock);
-		return NULL;
+		ERROR_CODE = ERROR_C_OPTION;
+		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+			return NULL;
 	}
 	while (1) {
 		memset(msg, 0, sizeof(msg));
 		int recv_len = recv(clnt_sock, msg, MSG_SIZE - 1, 0);
 		if (recv_len < 0) {
 			printf("fd#%d recv() error or timeout\n", clnt_sock);
-			close_all(serv_sock, clnt_sock);
-			return NULL;
+			ERROR_CODE = ERROR_C_TIMEOUT;
+			if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+				return NULL;
 		}
 		printf("fd#%d - %d received\n", clnt_sock, recv_len);
 		if (start_flag==1) {
@@ -54,12 +62,14 @@ void * handle_clnt(void * arg) {
 				close_all(serv_sock, clnt_sock);
 				return NULL;
 			}
-			/* TODO
-				parse a line and save it to a string variable
-				parse the variable
-				  get METHOD, save it (for next todo)
-				  get URI, save it (for next todo)
 
+			/* TODO
+				create METHOD variable
+				create URI variable
+				parse a line and save it to a string variable
+				parse METHOD and URI
+				  allocate METHOD, get METHOD, save it (for next todo)
+				  allocate URI, get URI, save it (for next todo)
 			*/
 			/* TODO
 				when method is GET:
@@ -82,6 +92,17 @@ void * handle_clnt(void * arg) {
 				    if not
 				      error
 			*/
+			/* TODO
+				free method variable
+				free URI variable
+			*/
+			act(msg, &recv_len, &ERROR_CODE);
+			/* TODO
+				process error code from act
+			*/
+			if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+				return NULL;
+
 			total_size = get_http_size(msg, recv_len, clnt_sock);
 			start_flag = 0;
 		}
@@ -91,8 +112,9 @@ void * handle_clnt(void * arg) {
 			printf("fd#%d - %d passed\n", clnt_sock, pass_len);
 			if (pass_len < recv_len) {
 				fputs("server send() error\n", stderr);
-				close_all(serv_sock, clnt_sock);
-				return NULL;
+				ERROR_CODE = ERROR_S_SEND;
+				if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+					return NULL;
 			} else if (current_size == total_size) {
 				break;
 			}
@@ -109,16 +131,18 @@ void * handle_clnt(void * arg) {
 	char serv_msg[MSG_SIZE];
 	if(setsockopt(serv_sock, SOL_SOCKET, SO_RCVTIMEO, &tv_serv2pass, sizeof(tv_serv2pass))==-1) {
 		printf("fd#%d server socket option failed\n", clnt_sock);
-		close_all(serv_sock, clnt_sock);
-		return NULL;
+		ERROR_CODE = ERROR_S_OPTION;
+		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+			return NULL;
 	}
 	while (1) {
 		memset(serv_msg, 0, sizeof(serv_msg));
 		int serv_recv_len = recv(serv_sock, serv_msg, MSG_SIZE - 1, 0);
 		if (serv_recv_len < 0) {
 			printf("fd#%d server recv() error or timeout\n", clnt_sock);
-			close_all(serv_sock, clnt_sock);
-			return NULL;
+			ERROR_CODE = ERROR_S_TIMEOUT;
+			if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+				return NULL;
 		}
 		printf("fd#%d - %d responsed\n", clnt_sock, serv_recv_len);
 		if (start_flag == 1) {
@@ -136,8 +160,9 @@ void * handle_clnt(void * arg) {
 			printf("fd#%d - %d passed to client\n", clnt_sock, send_len);
 			if (send_len < serv_recv_len) {
 				fputs("send() error\n", stderr);
-				close_all(serv_sock, clnt_sock);
-				return NULL;
+				ERROR_CODE = ERROR_C_SEND;
+				if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+					return NULL;
 			} else if (current_size == total_size) {
 				break;
 			}
@@ -190,3 +215,74 @@ void close_all(int serv_sock, int clnt_sock) {
 	return;
 }
 
+/* TODO
+	create METHOD variable
+	create URI variable
+	parse a line and save it to a string variable
+	parse METHOD and URI
+		allocate METHOD, get METHOD, save it (for next todo)
+		allocate URI, get URI, save it (for next todo)
+
+	when method is GET:
+		1. find URI in the whitelist file.
+			if there's line
+				end process.
+			if not
+				modify URI to hashed URI
+				find hashed URI from directory
+					if there's file
+						create symbolic link to safe area
+						modify hashed URI with safe area
+						modify recv_len with hashed URI
+					if not
+						error
+	when method is POST or METHOD:
+		1. find URI in the whitelist file.
+			if there's line
+				end process
+			if not
+				error
+
+	free method variable
+	free URI variable
+*/
+int act(char *msg, int *recv_len, int *ERROR_CODE) {
+	return 0;
+}
+
+/* TODO
+	check ERROR_CODE
+		if ERROR_CODE is in some domain of error
+			check domain of error (ex) error that is ignorable, error that should be close both of serv_sock... (just for generalize))
+			do some action for such types of action (ex) send client to 404 NOT FOUND ERROR ...)
+			close socket(this can be depending on error type)
+			return ERROR_TYPE (ERROR that should cut the connection function, or just resume connection....) : most of the case is just cut the connection
+		if not
+			return ERROR_TYPE_NO_ERROR
+*/
+int error_proc(int serv_sock, int clnt_sock, int *ERROR_CODE) {
+	if (*ERROR_CODE > 799) {
+		close_all(serv_sock, clnt_sock);
+		*ERROR_CODE = 0;
+		return ERROR_TYPE_EXIT;
+	}
+	 else if (*ERROR_CODE > 399) {
+		if (*ERROR_CODE == 404) {
+			// TODO some action(sending error packet to client etc...)
+			close_all(serv_sock, clnt_sock);
+			*ERROR_CODE = 0;
+			return ERROR_TYPE_EXIT;
+		}
+		/*
+		else if (if ERROR CODE is in some domain) {
+
+		}
+		else if (if ERROR CODE is in some domain) {
+
+		}//...
+		*/
+	}
+	else {
+		return ERROR_TYPE_NO_ERROR;
+	}
+}
