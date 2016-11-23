@@ -7,6 +7,7 @@
 #define CHARPERLINE 500
 #define CHARPERWORD 100
 #define FILEPATH "/etc/apache2/apache2.conf"
+
 // 지우고 on 기능 추가하기
 // - 1개만 있으면 3줄 지우고
 // - 여러개 있으면 line을 지우고
@@ -99,7 +100,7 @@ int EngineOff::exec(char* _path)
 
 		fclose(pFile);
 
-		pFile = fopen(_path, "a");
+		pFile = fopen(FILEPATH, "a");
 		if (pFile == NULL) {
 			cout << "Not open" << endl;
 			return 0;
