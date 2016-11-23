@@ -4,7 +4,7 @@
 //path : 저장 경로
 //max_size : 파일 최대 크기
 
-//성공시 파일 경로 반환
+//성공시 암호화하지 않은 파일 경로 반환
 //오류
 //-1 : 오류
 //-2 : 존재하지 않는 경로
@@ -13,11 +13,13 @@
 //-5 : HTTP로 전송된 파일이 아님
 //-6 : php 또는 html 파일
 function safe_upload($file, $path, $max_size = 2147483647){
+  $hash_opt = ['salt' => 'ThisIsNotRealWorldSalt'];
+
   //path validation
   if(!is_dir($path)) return -2;
   
   //경로 끝에 /가 없으면 추가해줌
-  if($path[strlen($path)-1] !== "/") $path.="/";
+  if($path[strlen($path)-1] !== '/') $path.='/';
 
   if($max_size < $file['size']) return -3;
 
@@ -28,24 +30,25 @@ function safe_upload($file, $path, $max_size = 2147483647){
 
   //확장자 체크
   $file_name = basename($file['name']);
-  if(preg_match("/\.(php|html)$/i", $file_name)) return -6;
+  if(preg_match('/\.(php|html)$/i', $file_name)) return -6;
 
   //경로 지정
   $path_parts = pathinfo($file_name);
   $file_name = $path_parts['filename'];
   $extension = $path_parts['extension'];
-  $uploadfile = $path . sha1($file_name) .".". $extension;
+
+  $uploadfile = $path . password_hash($file_name, PASSWORD_BCRYPT, $hash_opt) .'.'. $extension;
 
   //파일 이름 재설정
   while(file_exists($uploadfile)){
     $file_name = $file_name.rand(1,1000);
-    $uploadfile =  $path . sha1($file_name) . "." . $extension;
+    $uploadfile =  $path . password_hash($file_name, PASSWORD_BCRYPT, $hash_opt) . '.' . $extension;
   }
 
 
-  // move_uploaded_file은 임시 저장되어 있는 파일을 ./uploads 디렉토리로 이동합니다.
+  //move_uploaded_file은 임시 저장되어 있는 파일을 ./uploads 디렉토리로 이동합니다.
   if(move_uploaded_file($file['tmp_name'], $uploadfile)) {
-    return realpath($path) ."/". $file_name. ".". $extension;
+    return realpath($path) .'/'. $file_name. '.'. $extension;
   }
   else {
     return -1;
