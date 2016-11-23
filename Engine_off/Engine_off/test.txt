@@ -1,0 +1,12 @@
+<Directory /var/www/html/test.txt>
+	php_admin_value engine o
+	php_admin_value engine on
+
+	php_admin_value engine of
+
+	php_admin_value eng
+
+</Directory>
+<Directory /var/www/html/test.txt>
+	php_admin_value engine off
+</Directory>

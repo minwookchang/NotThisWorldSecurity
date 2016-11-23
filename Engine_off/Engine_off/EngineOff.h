@@ -1,4 +1,6 @@
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <string>
 #include <vector>
 
@@ -12,7 +14,7 @@ private:
 public:
 	EngineOff();
 	~EngineOff();
-	int exec(const char* _path);
+	int exec(char* _path);
 };
 
 
