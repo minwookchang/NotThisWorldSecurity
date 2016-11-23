@@ -1,17 +1,20 @@
 <?php 
-//파일명 중복시 파일명 뒤에 (n) 추가
-//file : $_FILES 객체
-//path : 저장 경로
-//max_size : 파일 최대 크기
+/*
+파일명 중복시 파일명 뒤에 (n) 추가
+file : $_FILES 객체
+path : 저장 경로
+max_size : 파일 최대 크기
 
-//성공시 암호화하지 않은 파일 경로 반환
-//오류
-//-1 : 오류
-//-2 : 존재하지 않는 경로
-//-3 : 업로드 파일이 지정된 파일크기보다 큼
-//-4 : 오류
-//-5 : HTTP로 전송된 파일이 아님
-//-6 : php 또는 html 파일
+성공시 암호화하지 않은 파일 경로 반환
+오류
+  -1 : 오류
+  -2 : 존재하지 않는 경로
+  -3 : 업로드 파일이 지정된 파일크기보다 큼
+  -4 : 오류
+  -5 : HTTP로 전송된 파일이 아님
+  -6 : php 또는 html 파일
+*/
+
 function safe_upload($file, $path, $max_size = 2147483647){
   $hash_opt = ['salt' => 'ThisIsNotRealWorldSalt'];
   $iterator = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'?'\\':'/';
