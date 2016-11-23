@@ -215,38 +215,92 @@ void close_all(int serv_sock, int clnt_sock) {
 	return;
 }
 
-/* TODO
-	create METHOD variable
-	create URI variable
-	parse a line and save it to a string variable
-	parse METHOD and URI
-		allocate METHOD, get METHOD, save it (for next todo)
-		allocate URI, get URI, save it (for next todo)
-
-	when method is GET:
-		1. find URI in the whitelist file.
-			if there's line
-				end process.
-			if not
-				modify URI to hashed URI
-				find hashed URI from directory
-					if there's file
-						create symbolic link to safe area
-						modify hashed URI with safe area
-						modify recv_len with hashed URI
-					if not
-						error
-	when method is POST or METHOD:
-		1. find URI in the whitelist file.
-			if there's line
-				end process
-			if not
-				error
-
-	free method variable
-	free URI variable
-*/
 int act(char *msg, int *recv_len, int *ERROR_CODE) {
+	char *method, *uri, *version, *first_line_end;
+	int method_len, uri_len;
+	char * delimeter = "\r\n";
+
+	/* TODO
+		create METHOD variable
+		create URI variable
+		parse a line and save it to a string variable
+		parse METHOD and URI
+			allocate METHOD, get METHOD, save it (for next todo)
+			allocate URI, get URI, save it (for next todo)
+	*/
+	method = msg;
+	if (method == NULL) {
+		*ERROR_CODE = 404;
+		return -1;
+	}
+	first_line_end = strstr(msg, delimeter);
+	if (first_line_end == NULL) {
+		*ERROR_CODE = 404;
+		return -1;
+	}
+	uri = strchr(method, ' ');
+	if (uri == NULL || first_line_end - uri <= 0) {
+		*ERROR_CODE = 404;
+		return -1;
+	}
+	method_len = uri - method;
+	uri++;
+	version = strchr(uri, ' ');
+	if (version == NULL || first_line_end - version <= 0) {
+		*ERROR_CODE = 404;
+		return -1;
+	}
+	uri_len = version - uri;
+	version++;
+	char *method_str = (char *)malloc(sizeof(char) * (method_len + 1));
+	method_str[method_len] = '\0';
+	strncpy(method_str, method, method_len);
+	char *uri_str = (char *)malloc(sizeof(char) * (uri_len + 1));
+	uri_str[uri_len] = '\0';
+	strncpy(uri_str, uri, uri_len);
+	printf("method : %s, URI : %s\n", method_str, uri_str);	//for testring purpose
+
+
+	/* TODO
+		when method is GET:
+			1. find URI in the whitelist file.
+				if there's line
+					end process.
+				if not
+					modify URI to hashed URI
+					find hashed URI from directory
+						if there's file
+							create symbolic link to safe area
+							modify hashed URI with safe area
+							modify recv_len with hashed URI
+						if not
+							error
+		when method is POST or METHOD:
+			1. find URI in the whitelist file.
+				if there's line
+					end process
+				if not
+					error
+	*/
+	/*
+	if (strcmp(method_str, "GET") == 0) {
+		char * uri_file_start;
+		char * uri_file_end;
+		int hash_size = 61;		//bcrypt hashspace
+
+	}
+	else {
+
+	}
+	*/
+
+	/* TODO
+	don't forget that in each return, free the allocated variables!!
+		free method variable
+		free URI variable
+	*/
+	free(method_str);
+	free(uri_str);
 	return 0;
 }
 
