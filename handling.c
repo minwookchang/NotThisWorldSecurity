@@ -282,17 +282,61 @@ int act(char *msg, int *recv_len, int *ERROR_CODE) {
 				if not
 					error
 	*/
-	/*
-	if (strcmp(method_str, "GET") == 0) {
-		char * uri_file_start;
-		char * uri_file_end;
-		int hash_size = 61;		//bcrypt hashspace
-
+	char * uri_file_start = NULL;	//the left of the start is directory, right is file
+	char * uri_file_pivot = NULL;	//the left of the pivot is filename, right is extensions(not hashed)
+	char * uri_file_end;	//the left of the end is file, right is GET extensions
+	char record_bit = 0;
+	//whitelisting from uri to uri_file_end(not included), hashing from uri_file_start(not included) to uri_file_pivot(not included).
+	int i = uri_len - 1;
+	while (i > -1) {
+		if (uri[i] == '/') {
+			uri_file_start = &uri[i];
+			break;
+		}
+		i--;
 	}
-	else {
-
+	if (uri_file_start == NULL) {
+		*ERROR_CODE = 404;
+		free(method_str);
+		free(uri_str);
+		return -1;
 	}
-	*/
+	uri_file_end = strchr(uri_file_start, '?');
+	if (uri_file_end == NULL) {
+		uri_file_end = &uri[uri_len];
+	}
+	char * a = uri_file_end;
+	while(a > uri_file_start) {
+		if (*a == '.') {
+			uri_file_pivot = a;
+			break;
+		}
+		a--;
+	}
+	if (uri_file_pivot == NULL) {
+		uri_file_pivot = uri_file_end;
+	}
+
+	record_bit = *uri_file_end;
+	*uri_file_end = '\0';
+	printf("uri : %s\n", uri);
+	int list_flag = find(uri);
+	*uri_file_end = record_bit;
+	if (list_flag == FILE_MISMATCH) {
+		if (strcmp(method_str, "GET") == 0) {
+			// should be modified
+			*ERROR_CODE = 404;
+			free(method_str);
+			free(uri_str);
+			return -1;
+		}
+		else {
+			*ERROR_CODE = 404;
+			free(method_str);
+			free(uri_str);
+			return -1;
+		}
+	}
 
 	/* TODO
 	don't forget that in each return, free the allocated variables!!

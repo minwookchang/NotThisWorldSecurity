@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <pthread.h>
+#include "list_finder.h"
 
 //#include "mutex.h"
 
