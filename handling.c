@@ -48,7 +48,7 @@ void * handle_clnt(void * arg) {
 	}
 	while (1) {
 		memset(msg, 0, sizeof(msg));
-		int recv_len = recv(clnt_sock, msg, MSG_SIZE - 1, 0);
+		int recv_len = recv(clnt_sock, msg, MSG_RECEIVE_SIZE - 1, 0);
 		if (recv_len < 0) {
 			printf("fd#%d recv() error or timeout\n", clnt_sock);
 			ERROR_CODE = ERROR_C_TIMEOUT;
@@ -324,11 +324,12 @@ int act(char *msg, int *recv_len, int *ERROR_CODE) {
 	*uri_file_end = record_bit;
 	if (list_flag == FILE_MISMATCH) {
 		if (strcmp(method_str, "GET") == 0) {
-			// should be modified
-			*ERROR_CODE = 404;
-			free(method_str);
-			free(uri_str);
-			return -1;
+			if (hash_load(uri, uri_file_start, uri_file_pivot, uri_file_end) == -1) {
+				*ERROR_CODE = 404;
+				free(method_str);
+				free(uri_str);
+				return -1;
+			}
 		}
 		else {
 			*ERROR_CODE = 404;
@@ -383,4 +384,25 @@ int error_proc(int serv_sock, int clnt_sock, int *ERROR_CODE) {
 	else {
 		return ERROR_TYPE_NO_ERROR;
 	}
+}
+
+int hash_load(char *uri, char *uri_file_start, char *uri_file_pivot, char *uri_file_end) {
+	char *location;
+	if (uri_file_start+1<uri_file_pivot) {
+		location = (char *)malloc(sizeof(char)*(uri_file_end - uri - (uri_file_pivot - uri_file_start - 1) + BCRYPT_HASHSIZE + 1));
+		memset(location, 0, uri_file_end - uri - (uri_file_pivot - uri_file_start - 1) + BCRYPT_HASHSIZE + 1);
+		memcpy(location, uri, uri_file_pivot - uri);
+		char hash[BCRYPT_HASHSIZE];
+		bcrypt_hashpw(&location[uri_file_start - uri + 1], SALT, hash);
+		memcpy(&location[uri_file_start - uri + 1], hash, BCRYPT_HASHSIZE);
+		strncat(location, uri_file_pivot, uri_file_end - uri_file_pivot);
+	}
+	else {
+		location = (char *)malloc(sizeof(char)*(uri_file_end - uri + 1));
+		memset(location, 0, uri_file_end - uri + 1);
+		memcpy(location, uri, uri_file_end - uri);
+	}
+	printf("location : %s\n", location);
+	free(location);
+	return -1;
 }

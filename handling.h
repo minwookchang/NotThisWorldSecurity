@@ -9,10 +9,13 @@
 #include <sys/socket.h>
 #include <pthread.h>
 #include "list_finder.h"
+#include "bcrypt.h"
 
 //#include "mutex.h"
 
 #define MSG_SIZE	(4096)
+#define MSG_RECEIVE_SIZE	(2048)
+#define SALT		("$2y$10$ThisIsNotRealWorldSalt")
 
 //ERROR TYPE
 #define ERROR_TYPE_NO_ERROR	(0)
