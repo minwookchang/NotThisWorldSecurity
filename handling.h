@@ -43,7 +43,7 @@ int get_http_size(char * msg, int recv_len, int clnt_sock);
 void close_all(int serv_sock, int clnt_sock);
 /* TODO two function below */
 int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path);
-int error_proc(int serv_sock, int clnt_sock, int *ERROR_CODE);
+int error_proc(int serv_sock, int clnt_sock, int *ERROR_CODE, char *symbol_path);
 int hash_load(char *msg, char *uri, char *uri_file_start, char *uri_file_pivot, char *uri_file_end, int *recv_len, char *symbol_path);
 
 #endif

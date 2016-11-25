@@ -8,12 +8,27 @@ int find(char * URI) {
 	char buffer[FILE_SIZE_LIMIT_APPROX];
 	memset(buffer, 0, FILE_SIZE_LIMIT_APPROX);
 	read(fd, buffer, FILE_SIZE_LIMIT_APPROX - 1);
-	printf("buffer : %s\n", buffer);
 	char * token = strtok(buffer, "\n");
 	while (token) {
-		if (strcmp(token, URI) == 0) {
-			close(fd);
-			return FILE_MATCH;
+		if (token[strlen(token) - 1] == '/') {
+			if (strlen(token) == 1) {
+				if (strcmp(token, URI) == 0) {
+					close(fd);
+					return FILE_MATCH;
+				}
+			}
+			else {
+				if (strncmp(token, URI, strlen(token)) == 0) {
+					close(fd);
+					return FILE_MATCH;
+				}
+			}
+		}
+		else {
+			if (strcmp(token, URI) == 0) {
+				close(fd);
+				return FILE_MATCH;
+			}
 		}
 		token = strtok(NULL, "\n");
 	}

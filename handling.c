@@ -19,7 +19,7 @@ void * handle_clnt(void * arg) {
 	if (serv_sock < 0) {
 		fputs("server socket() error\n", stderr);
 		ERROR_CODE = ERROR_S_SOCK_CREATION;
-		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE, symbol_path) == ERROR_TYPE_EXIT)
 			return NULL;
 	}
 	struct sockaddr_in serv_addr;
@@ -30,7 +30,7 @@ void * handle_clnt(void * arg) {
 	if (connect(serv_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
 		fputs("server connect() error\n", stderr);
 		ERROR_CODE = ERROR_S_CONNECTION;
-		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE, symbol_path) == ERROR_TYPE_EXIT)
 			return NULL;
 	}
 
@@ -43,7 +43,7 @@ void * handle_clnt(void * arg) {
 	if(setsockopt(clnt_sock, SOL_SOCKET, SO_RCVTIMEO, &tv_clnt2pass, sizeof(tv_clnt2pass))==-1) {
 		printf("fd#%d socket option failed\n", clnt_sock);
 		ERROR_CODE = ERROR_C_OPTION;
-		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE, symbol_path) == ERROR_TYPE_EXIT)
 			return NULL;
 	}
 	while (1) {
@@ -52,7 +52,7 @@ void * handle_clnt(void * arg) {
 		if (recv_len < 0) {
 			printf("fd#%d recv() error or timeout\n", clnt_sock);
 			ERROR_CODE = ERROR_C_TIMEOUT;
-			if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+			if (error_proc(serv_sock, clnt_sock, &ERROR_CODE, symbol_path) == ERROR_TYPE_EXIT)
 				return NULL;
 		}
 		printf("fd#%d - %d received\n", clnt_sock, recv_len);
@@ -100,7 +100,7 @@ void * handle_clnt(void * arg) {
 			/* TODO
 				process error code from act
 			*/
-			if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+			if (error_proc(serv_sock, clnt_sock, &ERROR_CODE, symbol_path) == ERROR_TYPE_EXIT)
 				return NULL;
 
 			total_size = get_http_size(msg, recv_len, clnt_sock);
@@ -113,7 +113,7 @@ void * handle_clnt(void * arg) {
 			if (pass_len < recv_len) {
 				fputs("server send() error\n", stderr);
 				ERROR_CODE = ERROR_S_SEND;
-				if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+				if (error_proc(serv_sock, clnt_sock, &ERROR_CODE, symbol_path) == ERROR_TYPE_EXIT)
 					return NULL;
 			} else if (current_size == total_size) {
 				break;
@@ -123,6 +123,7 @@ void * handle_clnt(void * arg) {
 		}
 	}
 
+	printf("msg\n%s\n", msg);
 	//responsing loop
 	printf("fd#%d responsing loop start\n", clnt_sock);
 	start_flag = 1;
@@ -132,7 +133,7 @@ void * handle_clnt(void * arg) {
 	if(setsockopt(serv_sock, SOL_SOCKET, SO_RCVTIMEO, &tv_serv2pass, sizeof(tv_serv2pass))==-1) {
 		printf("fd#%d server socket option failed\n", clnt_sock);
 		ERROR_CODE = ERROR_S_OPTION;
-		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE, symbol_path) == ERROR_TYPE_EXIT)
 			return NULL;
 	}
 	while (1) {
@@ -141,11 +142,12 @@ void * handle_clnt(void * arg) {
 		if (serv_recv_len < 0) {
 			printf("fd#%d server recv() error or timeout\n", clnt_sock);
 			ERROR_CODE = ERROR_S_TIMEOUT;
-			if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+			if (error_proc(serv_sock, clnt_sock, &ERROR_CODE, symbol_path) == ERROR_TYPE_EXIT)
 				return NULL;
 		}
 		printf("fd#%d - %d responsed\n", clnt_sock, serv_recv_len);
 		if (start_flag == 1) {
+			printf("serv_msg\n%s\n", serv_msg);
 			if(serv_recv_len==0) {
 				printf("server return no data\n");
 				close_all(serv_sock, clnt_sock);
@@ -161,7 +163,7 @@ void * handle_clnt(void * arg) {
 			if (send_len < serv_recv_len) {
 				fputs("send() error\n", stderr);
 				ERROR_CODE = ERROR_C_SEND;
-				if (error_proc(serv_sock, clnt_sock, &ERROR_CODE) == ERROR_TYPE_EXIT)
+				if (error_proc(serv_sock, clnt_sock, &ERROR_CODE, symbol_path) == ERROR_TYPE_EXIT)
 					return NULL;
 			} else if (current_size == total_size) {
 				break;
@@ -216,7 +218,6 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 	char *method, *uri, *version, *first_line_end;
 	int method_len, uri_len;
 	char * delimeter = "\r\n";
-
 	/* TODO
 		create METHOD variable
 		create URI variable
@@ -318,6 +319,13 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 	int list_flag = find(uri);
 	*uri_file_end = record_bit;
 	if (list_flag == FILE_MISMATCH) {
+		if (hash_load(msg, uri, uri_file_start, uri_file_pivot, uri_file_end, recv_len, symbol_path) == -1) {
+			*ERROR_CODE = 404;
+			free(method_str);
+			free(uri_str);
+			return -1;
+		}
+		/*
 		if (strcmp(method_str, "GET") == 0) {
 			if (hash_load(msg, uri, uri_file_start, uri_file_pivot, uri_file_end, recv_len, symbol_path) == -1) {
 				*ERROR_CODE = 404;
@@ -332,6 +340,7 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 			free(uri_str);
 			return -1;
 		}
+		*/
 	}
 
 	/* TODO
@@ -354,17 +363,29 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 		if not
 			return ERROR_TYPE_NO_ERROR
 */
-int error_proc(int serv_sock, int clnt_sock, int *ERROR_CODE) {
+int error_proc(int serv_sock, int clnt_sock, int *ERROR_CODE, char *symbol_path) {
 	if (*ERROR_CODE > 799) {
+		char *ERROR_MSG = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+		send(clnt_sock, ERROR_MSG, strlen(ERROR_MSG), 0);
 		close_all(serv_sock, clnt_sock);
 		*ERROR_CODE = 0;
+		if (strlen(symbol_path) != 0) {
+			remove(symbol_path);
+			// TODO : remove symbolic link
+		}
 		return ERROR_TYPE_EXIT;
 	}
 	 else if (*ERROR_CODE > 399) {
 		if (*ERROR_CODE == 404) {
 			// TODO some action(sending error packet to client etc...)
+			char *ERROR_MSG = "HTTP/1.1 404 Not Found\r\n\r\n";
+			send(clnt_sock, ERROR_MSG, strlen(ERROR_MSG), 0);
 			close_all(serv_sock, clnt_sock);
 			*ERROR_CODE = 0;
+			if (strlen(symbol_path) != 0) {
+				remove(symbol_path);
+				// TODO : remove symbolic link
+			}
 			return ERROR_TYPE_EXIT;
 		}
 		/*
