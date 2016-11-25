@@ -10,12 +10,12 @@ void * handle_clnt(void * arg) {
 		ERROR CODE implemented
 	*/
 	int ERROR_CODE=0;
+	char symbol_path[SYMBOL_SIZE + 10];
+	memset(symbol_path, 0, SYMBOL_SIZE + 10);
 
 	//server connection
 	int serv_sock;
-	//pthread_mutex_lock(&fd_mutx);
 	serv_sock = socket(PF_INET, SOCK_STREAM, 0);
-	//pthread_mutex_unlock(&fd_mutx);
 	if (serv_sock < 0) {
 		fputs("server socket() error\n", stderr);
 		ERROR_CODE = ERROR_S_SOCK_CREATION;
@@ -96,7 +96,7 @@ void * handle_clnt(void * arg) {
 				free method variable
 				free URI variable
 			*/
-			act(msg, &recv_len, &ERROR_CODE);
+			act(msg, &recv_len, &ERROR_CODE, symbol_path);
 			/* TODO
 				process error code from act
 			*/
@@ -177,9 +177,8 @@ void * handle_clnt(void * arg) {
 }
 
 int get_http_size(char * msg, int recv_len, int clnt_sock) {
-	char buffer[2048];
+	char buffer[MSG_SIZE];
 	strncpy(buffer, msg, recv_len);
-	printf("%s\n", msg);
 	char *end = strstr(buffer, "\r\n\r\n");
 	if (end == NULL) {
 		printf("fd#%d invalid header\n", clnt_sock);
@@ -208,14 +207,12 @@ int get_http_size(char * msg, int recv_len, int clnt_sock) {
 
 
 void close_all(int serv_sock, int clnt_sock) {
-	//pthread_mutex_lock(&fd_mutx);
 	close(serv_sock);
 	close(clnt_sock);
-	//pthread_mutex_unlock(&fd_mutx);
 	return;
 }
 
-int act(char *msg, int *recv_len, int *ERROR_CODE) {
+int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 	char *method, *uri, *version, *first_line_end;
 	int method_len, uri_len;
 	char * delimeter = "\r\n";
@@ -258,7 +255,6 @@ int act(char *msg, int *recv_len, int *ERROR_CODE) {
 	char *uri_str = (char *)malloc(sizeof(char) * (uri_len + 1));
 	uri_str[uri_len] = '\0';
 	strncpy(uri_str, uri, uri_len);
-	printf("method : %s, URI : %s\n", method_str, uri_str);	//for testring purpose
 
 
 	/* TODO
@@ -319,12 +315,11 @@ int act(char *msg, int *recv_len, int *ERROR_CODE) {
 
 	record_bit = *uri_file_end;
 	*uri_file_end = '\0';
-	printf("uri : %s\n", uri);
 	int list_flag = find(uri);
 	*uri_file_end = record_bit;
 	if (list_flag == FILE_MISMATCH) {
 		if (strcmp(method_str, "GET") == 0) {
-			if (hash_load(uri, uri_file_start, uri_file_pivot, uri_file_end) == -1) {
+			if (hash_load(msg, uri, uri_file_start, uri_file_pivot, uri_file_end, recv_len, symbol_path) == -1) {
 				*ERROR_CODE = 404;
 				free(method_str);
 				free(uri_str);
@@ -386,23 +381,67 @@ int error_proc(int serv_sock, int clnt_sock, int *ERROR_CODE) {
 	}
 }
 
-int hash_load(char *uri, char *uri_file_start, char *uri_file_pivot, char *uri_file_end) {
+int hash_load(char *msg, char *uri, char *uri_file_start, char *uri_file_pivot, char *uri_file_end, int *recv_len, char *symbol_path) {
 	char *location;
 	if (uri_file_start+1<uri_file_pivot) {
-		location = (char *)malloc(sizeof(char)*(uri_file_end - uri - (uri_file_pivot - uri_file_start - 1) + BCRYPT_HASHSIZE + 1));
-		memset(location, 0, uri_file_end - uri - (uri_file_pivot - uri_file_start - 1) + BCRYPT_HASHSIZE + 1);
-		memcpy(location, uri, uri_file_pivot - uri);
+		location = (char *)malloc(sizeof(char)*(13 + uri_file_end - uri - (uri_file_pivot - uri_file_start - 1) + BCRYPT_HASHSIZE + 1));
+		memset(location, 0, 13 + uri_file_end - uri - (uri_file_pivot - uri_file_start - 1) + BCRYPT_HASHSIZE + 1);
+		strncat(location, "/var/www/html", 13);
+		strncat(location, uri, uri_file_pivot - uri);
 		char hash[BCRYPT_HASHSIZE];
-		bcrypt_hashpw(&location[uri_file_start - uri + 1], SALT, hash);
-		memcpy(&location[uri_file_start - uri + 1], hash, BCRYPT_HASHSIZE);
+		bcrypt_hashpw(&location[13+uri_file_start - uri + 1], SALT, hash);
+		memcpy(&location[13 + uri_file_start - uri + 1], hash, BCRYPT_HASHSIZE);
 		strncat(location, uri_file_pivot, uri_file_end - uri_file_pivot);
+
+		struct stat buf;
+		if (stat(location, &buf) == 0) {
+
+			int symbol_id = get_symbol_id();
+			sprintf(symbol_path, "/var/www/html/TEMP/%d", symbol_id);
+			remove(symbol_path);
+			// TODO : remove symbolic link
+			if (symlink(location, symbol_path) == -1) {
+				printf("FAIL to CREATE SYMBOLIC LINK\n");
+			}
+			// TODO : make symbolic link
+
+			int origin_len = uri_file_end - uri;
+			int finish_len = strlen(symbol_path) - 13;
+			int changed_len = finish_len - origin_len;
+			if (changed_len > 0) {
+				char *a = &msg[*recv_len];
+				while (a > uri_file_end - 1) {
+					*(a + changed_len) = a[0];
+					a--;
+				}
+			}
+			else if (changed_len < 0) {
+				char *a = uri_file_end;
+				while (a < &msg[*recv_len + 1]) {
+					*(a + changed_len) = a[0];
+					a++;
+				}
+			}
+			memcpy(uri, &symbol_path[13], strlen(symbol_path)-13);
+			*recv_len = *recv_len + changed_len;
+
+			return 0;
+		}
+		else {
+			free(location);
+			return -1;
+		}
 	}
 	else {
+		/* with assumption that no name case is invalid, we can erase this part. ex) /.png, /.jpg */
+		/*
 		location = (char *)malloc(sizeof(char)*(uri_file_end - uri + 1));
 		memset(location, 0, uri_file_end - uri + 1);
 		memcpy(location, uri, uri_file_end - uri);
+		*/
 	}
 	printf("location : %s\n", location);
+	
 	free(location);
 	return -1;
 }

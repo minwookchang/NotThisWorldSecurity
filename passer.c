@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <pthread.h>
 
-//#include "mutex.h"
+#include "mutex.h"
 #include "handling.h"
 
 #define MAX_CLNT 64
@@ -23,7 +23,10 @@ int main(int argc, char *argv[]) {
 	int clnt_addr_sz;
 
 	pthread_t t_id[MAX_CLNT];
-	//pthread_mutex_init(&fd_mutx, NULL);
+	if (pthread_mutex_init(&fd_mutx, NULL) == -1) {
+		printf("MUTEX ERROR\n");
+		exit(1);
+	}
 	if(argc!=4) {
 		printf("Usage : %s <port> <server address> <server port>\n", argv[0]);
 		exit(1);
@@ -53,9 +56,7 @@ int main(int argc, char *argv[]) {
 
 	while(1) {
 		clnt_addr_sz=sizeof(clnt_addr);
-		//pthread_mutex_lock(&fd_mutx);
 		clnt_sock=accept(pass_sock, (struct sockaddr*) &clnt_addr, &clnt_addr_sz);
-		//pthread_mutex_unlock(&fd_mutx);
 
 		pthread_create(&t_id[clnt_sock], NULL, handle_clnt, (void*) &clnt_sock);
 		pthread_detach(t_id[clnt_sock]);

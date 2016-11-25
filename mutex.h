@@ -8,5 +8,6 @@
 #include <pthread.h>
 
 extern pthread_mutex_t fd_mutx;
+int get_symbol_id();
 
 #endif
