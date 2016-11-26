@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
-#include "EngineOff.h"
+#include "EngineOption.h"
 
 #define CHARPERLINE 500
 #define CHARPERWORD 100
@@ -12,22 +12,22 @@
 // - 1개만 있으면 3줄 지우고
 // - 여러개 있으면 line을 지우고
 
-EngineOff::EngineOff()
+EngineOption::EngineOption()
 {
 }
 
 
-EngineOff::~EngineOff()
+EngineOption::~EngineOption()
 {
 }
 
 
-int EngineOff::exec(char* _path)
+int EngineOption::exec(char* _path)
 {
-	
-	string str = "<Directory /var/www/html/"+ (string)_path + (string)">";
+
+	string str = "<Directory /var/www/html/" + (string)_path + (string)">";
 	string strend = "</Directory>\0";
-	string stroff = "\tphp_admin_value engine off\0";
+	string strOption = "\tOptions FollowSymLinks\0";
 
 	//file read
 	pFile = fopen(FILEPATH, ("rb"));
@@ -56,25 +56,25 @@ int EngineOff::exec(char* _path)
 
 	getchar();
 
-	buf2 = strtok(buf,"\n");
+	buf2 = strtok(buf, "\n");
 
 	cout << "buf2: " << buf2 << endl;
 
 	getchar();
 	//if already exists
 	while (buf2) {
-		
+
 		cout << buf2 << endl;
 		cout << str << endl;
-		cout << stroff << endl;
+		cout << strOption << endl;
 		cout << strend << endl;
 
-		if (strncmp(buf2,str.c_str(),strlen(str.c_str())) == 0) {
+		if (strncmp(buf2, str.c_str(), strlen(str.c_str())) == 0) {
 			flag = 1;
 			cout << "flag = 1 " << endl;
 		}
 		if (flag == 1) {
-			if (strncmp(buf2, stroff.c_str(), strlen(stroff.c_str())) == 0) {
+			if (strncmp(buf2, strOption.c_str(), strlen(strOption.c_str())) == 0) {
 				flag = 2;
 				cout << "flag = 2 " << endl;
 				break;
@@ -88,9 +88,9 @@ int EngineOff::exec(char* _path)
 		buf2 = strtok(NULL, "\n");
 	}
 
-	//there is already engine off
-	if (flag == 2){
-		cout << "Already engine off" << endl;
+	//there is already engine Option
+	if (flag == 2) {
+		cout << "Already Option set" << endl;
 		return 0;
 
 		free(buf);
@@ -106,11 +106,11 @@ int EngineOff::exec(char* _path)
 			cout << "Not open" << endl;
 			return 0;
 		}
-		fprintf(pFile, "%s\n%s\n%s",str.c_str(),stroff.c_str(),strend.c_str());
-		
+		fprintf(pFile, "%s\n%s\n%s", str.c_str(), strOption.c_str(), strend.c_str());
+
 		free(buf);
 		free(buf2);
-		
+
 		return 1;
 	}
 

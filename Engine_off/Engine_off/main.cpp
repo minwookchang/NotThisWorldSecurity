@@ -34,6 +34,8 @@ void main() {
 			cout << "Input the dir path" << endl;
 			gets_s(s);
 
+			EngineOption engineoption;
+			result = engineoption.exec(s);
 			
 			if (result == 1) {
 				cout << "Option Success!" << endl;
