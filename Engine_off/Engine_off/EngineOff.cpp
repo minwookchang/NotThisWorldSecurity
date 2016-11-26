@@ -90,6 +90,7 @@ int EngineOff::exec(char* _path)
 
 	//there is already engine off
 	if (flag == 2){
+		cout << "Already engine off" << endl;
 		return 0;
 
 		free(buf);
@@ -115,7 +116,7 @@ int EngineOff::exec(char* _path)
 	}
 
 	else {
-		cout << "something wrong" << endl;
+		cout << "Something wrong" << endl;
 
 		free(buf);
 		free(buf2);
