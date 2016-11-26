@@ -147,10 +147,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="EngineOff.cpp" />
+    <ClCompile Include="EngineOption.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EngineOff.h" />
+    <ClInclude Include="EngineOption.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />
