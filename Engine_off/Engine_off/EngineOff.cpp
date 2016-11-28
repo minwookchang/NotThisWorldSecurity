@@ -6,9 +6,9 @@
 
 #define CHARPERLINE 500
 #define CHARPERWORD 100
-//#define FILEPATH "/etc/apache2/apache2.conf"
+#define FILEPATH "/etc/apache2/apache2.conf"
 //for testing
-#define FILEPATH "apache2.conf"
+//#define FILEPATH "apache2.conf"
 
 
 // 지우고 on 기능 추가하기
@@ -28,7 +28,7 @@ EngineOff::~EngineOff()
 int EngineOff::exec(char* _path)
 {
 	
-	string str = "\n<Directory /var/www/html/"+ (string)_path + (string)">";
+	string str = "<Directory /var/www/html/"+ (string)_path + (string)">";
 	string strend = "</Directory>\0";
 	string stroff = "\tphp_admin_value engine off\0";
 
@@ -44,7 +44,6 @@ int EngineOff::exec(char* _path)
 
 	fseek(pFile, 0, SEEK_END);
 	long lSize = ftell(pFile);
-	cout << lSize << endl;
 	fseek(pFile, 0, SEEK_SET);
 
 	char* buf = (char*)malloc(sizeof(char)*lSize);
@@ -78,6 +77,7 @@ int EngineOff::exec(char* _path)
 	//there is already engine off
 	if (flag == 2){
 		cout << "Already engine off" << endl;
+		fclose(pFile);
 		return 0;
 
 		free(buf);
@@ -93,11 +93,11 @@ int EngineOff::exec(char* _path)
 			cout << "Not open" << endl;
 			return 0;
 		}
-		fprintf(pFile, "%s\n%s\n%s",str.c_str(),stroff.c_str(),strend.c_str());
+		fprintf(pFile, "\n%s\n%s\n%s",str.c_str(),stroff.c_str(),strend.c_str());
 		
 		free(buf);
 		free(buf2);
-		
+		fclose(pFile);
 		return 1;
 	}
 
@@ -106,8 +106,8 @@ int EngineOff::exec(char* _path)
 
 		free(buf);
 		free(buf2);
-
+		fclose(pFile);
 		return 0;
-
 	}
+
 }
