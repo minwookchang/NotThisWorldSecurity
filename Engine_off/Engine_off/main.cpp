@@ -43,7 +43,7 @@ int main() {
 			}
 		}
 		else if (strcmp(s, "q") == 0) {
-			return;
+			return 0;
 		}
 		else {
 			cout << "error input" << endl;
