@@ -6,9 +6,9 @@
 
 #define CHARPERLINE 500
 #define CHARPERWORD 100
-#define FILEPATH "/etc/apache2/apache2.conf"
+//#define FILEPATH "/etc/apache2/apache2.conf"
 //for testing
-//#define FILEPATH "apache2.conf"
+#define FILEPATH "apache2.conf"
 
 // 지우고 on 기능 추가하기
 // - 1개만 있으면 3줄 지우고
@@ -27,7 +27,7 @@ EngineOption::~EngineOption()
 int EngineOption::exec(char* _path)
 {
 
-	string str = "\n<Directory /var/www/html/" + (string)_path + (string)">";
+	string str = "<Directory /var/www/html/" + (string)_path + (string)">";
 	string strend = "</Directory>\0";
 	string strOption = "\tOptions FollowSymLinks\0";
 
@@ -43,7 +43,6 @@ int EngineOption::exec(char* _path)
 
 	fseek(pFile, 0, SEEK_END);
 	long lSize = ftell(pFile);
-	cout << lSize << endl;
 	fseek(pFile, 0, SEEK_SET);
 
 	char* buf = (char*)malloc(sizeof(char)*lSize);
@@ -77,6 +76,8 @@ int EngineOption::exec(char* _path)
 	//there is already engine Option
 	if (flag == 2) {
 		cout << "Already Option set" << endl;
+		fclose(pFile);
+
 		return 0;
 
 		free(buf);
@@ -90,13 +91,14 @@ int EngineOption::exec(char* _path)
 		pFile = fopen(FILEPATH, "a");
 		if (pFile == NULL) {
 			cout << "Not open" << endl;
+			fclose(pFile);
 			return 0;
 		}
-		fprintf(pFile, "%s\n%s\n%s", str.c_str(), strOption.c_str(), strend.c_str());
+		fprintf(pFile, "\n%s\n%s\n%s", str.c_str(), strOption.c_str(), strend.c_str());
 
 		free(buf);
 		free(buf2);
-
+		fclose(pFile);
 		return 1;
 	}
 
@@ -105,7 +107,7 @@ int EngineOption::exec(char* _path)
 
 		free(buf);
 		free(buf2);
-
+		fclose(pFile);
 		return 0;
 
 	}
