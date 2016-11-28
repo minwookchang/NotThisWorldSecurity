@@ -6,9 +6,9 @@
 
 #define CHARPERLINE 500
 #define CHARPERWORD 100
-//#define FILEPATH "/etc/apache2/apache2.conf"
+#define FILEPATH "/etc/apache2/apache2.conf"
 //for testing
-#define FILEPATH "apache2.conf"
+//#define FILEPATH "apache2.conf"
 
 
 // 지우고 on 기능 추가하기
