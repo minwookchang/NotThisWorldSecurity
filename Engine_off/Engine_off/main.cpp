@@ -1,5 +1,6 @@
 #include <iostream>
 #include "EngineOff.h"
+#include "EngineOption.h"
 #include <cstring>
 #define _CRT_SECURE_NO_WARNINGS
 #define LENGTH 100
@@ -10,7 +11,7 @@ using namespace std;
 Options FollowSymLinks
 </Directory>
 */
-void main() {
+int main() {
 		
 	char s[LENGTH];
 	int result = 0;
@@ -50,5 +51,5 @@ void main() {
 
 
 	}
-
+	return 0;
 }
