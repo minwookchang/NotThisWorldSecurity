@@ -39,10 +39,10 @@ int EngineOff::exec(char* _path)
 	long curnum = 0;
 	int flag = 0;
 
-	_fseeki64(pFile, 0, SEEK_END);
+	fseek(pFile, 0, SEEK_END);
 	long lSize = ftell(pFile);
 	cout << lSize << endl;
-	_fseeki64(pFile, 0, SEEK_SET);
+	fseek(pFile, 0, SEEK_SET);
 
 	char* buf = (char*)malloc(sizeof(char)*lSize);
 	char* buf2 = (char*)malloc(sizeof(char) * CHARPERLINE);
