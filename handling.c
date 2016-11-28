@@ -96,7 +96,9 @@ void * handle_clnt(void * arg) {
 				free method variable
 				free URI variable
 			*/
+			printf("1\n");
 			act(msg, &recv_len, &ERROR_CODE, symbol_path);
+			printf("2\n");
 			/* TODO
 				process error code from act
 			*/
@@ -227,6 +229,7 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 			allocate URI, get URI, save it (for next todo)
 	*/
 	method = msg;
+	printf("msg1 : %s\n", msg);
 	if (method == NULL) {
 		*ERROR_CODE = 404;
 		return -1;
@@ -243,6 +246,7 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 	}
 	method_len = uri - method;
 	uri++;
+	printf("uri1 : %s\n", uri);
 	version = strchr(uri, ' ');
 	if (version == NULL || first_line_end - version <= 0) {
 		*ERROR_CODE = 404;
@@ -250,13 +254,14 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 	}
 	uri_len = version - uri;
 	version++;
+	printf("version1 : %s\n", version);
 	char *method_str = (char *)malloc(sizeof(char) * (method_len + 1));
 	method_str[method_len] = '\0';
 	strncpy(method_str, method, method_len);
 	char *uri_str = (char *)malloc(sizeof(char) * (uri_len + 1));
 	uri_str[uri_len] = '\0';
 	strncpy(uri_str, uri, uri_len);
-
+	printf("method : %s\nuri : %s\n", method_str, uri_str);
 
 	/* TODO
 		when method is GET:
@@ -298,8 +303,11 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 		free(uri_str);
 		return -1;
 	}
+	printf("uri_len : %d\nuri_file_start : %s\n", uri_len, uri_file_start);
 	uri_file_end = strchr(uri_file_start, '?');
 	if (uri_file_end == NULL) {
+		uri_file_end = &uri[uri_len];
+	} else if(uri_file_end - uri > uri_len) {
 		uri_file_end = &uri[uri_len];
 	}
 	char * a = uri_file_end;
@@ -310,6 +318,8 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 		}
 		a--;
 	}
+	printf("uri_file_end : %s\na : %s\n", uri_file_end, a);
+	printf("3\n");
 	if (uri_file_pivot == NULL) {
 		uri_file_pivot = uri_file_end;
 	}
@@ -317,14 +327,17 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 	record_bit = *uri_file_end;
 	*uri_file_end = '\0';
 	int list_flag = find(uri);
+	printf("uri after find : %s\nlist_flag : %d\n", uri, list_flag);
 	*uri_file_end = record_bit;
 	if (list_flag == FILE_MISMATCH) {
+		printf("4\n");
 		if (hash_load(msg, uri, uri_file_start, uri_file_pivot, uri_file_end, recv_len, symbol_path) == -1) {
 			*ERROR_CODE = 404;
 			free(method_str);
 			free(uri_str);
 			return -1;
 		}
+		printf("5\n");
 		/*
 		if (strcmp(method_str, "GET") == 0) {
 			if (hash_load(msg, uri, uri_file_start, uri_file_pivot, uri_file_end, recv_len, symbol_path) == -1) {
@@ -410,10 +423,12 @@ int hash_load(char *msg, char *uri, char *uri_file_start, char *uri_file_pivot, 
 		strncat(location, "/var/www/html", 13);
 		strncat(location, uri, uri_file_pivot - uri);
 		char hash[BCRYPT_HASHSIZE];
+		printf("location : %s\n", location);
 		bcrypt_hashpw(&location[13+uri_file_start - uri + 1], SALT, hash);
+		printf("hash : %s\n", hash);
 		memcpy(&location[13 + uri_file_start - uri + 1], hash, BCRYPT_HASHSIZE);
 		strncat(location, uri_file_pivot, uri_file_end - uri_file_pivot);
-
+		printf("location2 : %s\n", location);
 		struct stat buf;
 		if (stat(location, &buf) == 0) {
 
@@ -445,7 +460,7 @@ int hash_load(char *msg, char *uri, char *uri_file_start, char *uri_file_pivot, 
 			}
 			memcpy(uri, &symbol_path[13], strlen(symbol_path)-13);
 			*recv_len = *recv_len + changed_len;
-
+			free(location);
 			return 0;
 		}
 		else {
