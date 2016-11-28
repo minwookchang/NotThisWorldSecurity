@@ -1,14 +1,4 @@
 <?php 
-/*
-파일명 중복시 파일명 뒤에 (n) 추가
-file : $_FILES 객체
-path : 저장 경로
-max_size : 파일 최대 크기
-
-성공시 암호화하지 않은 파일 경로 반환
-오류시 오류 메시지 반환
-*/
-
 function safe_upload($file, $path, $max_size = 2147483647){
   $hash_opt = ['salt' => 'ThisIsNotRealWorldSalt'];
   $iterator = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'?'\\':'/';
