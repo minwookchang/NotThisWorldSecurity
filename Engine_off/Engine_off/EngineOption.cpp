@@ -6,7 +6,9 @@
 
 #define CHARPERLINE 500
 #define CHARPERWORD 100
-#define FILEPATH "/etc/apache2/apache2.conf"
+//#define FILEPATH "/etc/apache2/apache2.conf"
+//for testing
+#define FILEPATH "apache2.conf"
 
 // 지우고 on 기능 추가하기
 // - 1개만 있으면 3줄 지우고
@@ -25,7 +27,7 @@ EngineOption::~EngineOption()
 int EngineOption::exec(char* _path)
 {
 
-	string str = "<Directory /var/www/html/" + (string)_path + (string)">";
+	string str = "\n<Directory /var/www/html/" + (string)_path + (string)">";
 	string strend = "</Directory>\0";
 	string strOption = "\tOptions FollowSymLinks\0";
 
@@ -52,39 +54,23 @@ int EngineOption::exec(char* _path)
 		totnum += curnum;
 	}
 
-	cout << buf << endl;
-
-	getchar();
-
 	buf2 = strtok(buf, "\n");
 
-	cout << "buf2: " << buf2 << endl;
-
-	getchar();
 	//if already exists
 	while (buf2) {
 
-		cout << buf2 << endl;
-		cout << str << endl;
-		cout << strOption << endl;
-		cout << strend << endl;
-
 		if (strncmp(buf2, str.c_str(), strlen(str.c_str())) == 0) {
 			flag = 1;
-			cout << "flag = 1 " << endl;
 		}
 		if (flag == 1) {
 			if (strncmp(buf2, strOption.c_str(), strlen(strOption.c_str())) == 0) {
 				flag = 2;
-				cout << "flag = 2 " << endl;
 				break;
 			}
 			else if (strncmp(buf2, strend.c_str(), strlen(strend.c_str())) == 0) {
 				flag = 0;
-				cout << "flag = 0 " << endl;
 			}
 		}
-		getchar();
 		buf2 = strtok(NULL, "\n");
 	}
 
