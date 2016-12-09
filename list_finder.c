@@ -1,5 +1,8 @@
 #include "list_finder.h"
 
+//find uri form whitelist file.
+//if uri exists in whitelist return 1
+//else return 0
 int find(char * URI) {
 	int fd = open("./whitelist", O_RDONLY);
 	if (fd < 1) {

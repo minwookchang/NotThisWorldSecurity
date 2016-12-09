@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
 	}
 	SERVER_IP_ADDRESS=inet_addr(argv[2]);
 	SERVER_PORT_NO=atoi(argv[3]);
+
 	if(SERVER_IP_ADDRESS==-1) {
 		printf("Invalid Address\n");
 		exit(1);
@@ -48,7 +49,8 @@ int main(int argc, char *argv[]) {
 	pass_addr.sin_family=AF_INET;
 	pass_addr.sin_addr.s_addr=htonl(INADDR_ANY);
 	pass_addr.sin_port=htons(atoi(argv[1]));
-
+	
+	//bind port & server ip
 	if(bind(pass_sock, (struct sockaddr*) &pass_addr, sizeof(pass_addr))==-1)
 		error_handling("bind() error");
 	if(listen(pass_sock, 5)==-1)
@@ -58,6 +60,7 @@ int main(int argc, char *argv[]) {
 		clnt_addr_sz=sizeof(clnt_addr);
 		clnt_sock=accept(pass_sock, (struct sockaddr*) &clnt_addr, &clnt_addr_sz);
 
+		//pass packet to handling.c by using pthread
 		pthread_create(&t_id[clnt_sock], NULL, handle_clnt, (void*) &clnt_sock);
 		pthread_detach(t_id[clnt_sock]);
 		printf("Connected client IP: %s \n", inet_ntoa(clnt_addr.sin_addr));
