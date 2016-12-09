@@ -1,3 +1,10 @@
+/*
+2016-2 IS Term Project
+Autor : Minwook Chang
+
+Same as EngineOff.cpp
+*/
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <cstdio>
 #include <fstream>
@@ -7,12 +14,7 @@
 #define CHARPERLINE 500
 #define CHARPERWORD 100
 #define FILEPATH "/etc/apache2/apache2.conf"
-//for testing
-//#define FILEPATH "apache2.conf"
 
-// 지우고 on 기능 추가하기
-// - 1개만 있으면 3줄 지우고
-// - 여러개 있으면 line을 지우고
 
 EngineOption::EngineOption()
 {
@@ -29,6 +31,7 @@ int EngineOption::exec(char* _path)
 
 	string str = "<Directory /var/www/html/" + (string)_path + (string)">";
 	string strend = "</Directory>\0";
+//This is the only difference with EngineOff.cpp
 	string strOption = "\tOptions FollowSymLinks\0";
 
 	//file read

@@ -7,6 +7,8 @@
 	php_admin_value eng
 
 </Directory>
-<Directory /var/www/html/test.txt>
+
+
+<Directory /var/www/html/testdir>
 	php_admin_value engine off
 </Directory>
