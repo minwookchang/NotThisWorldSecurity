@@ -4,11 +4,9 @@ in_addr_t SERVER_IP_ADDRESS;
 int SERVER_PORT_NO;
 void * handle_clnt(void * arg) {
 	int clnt_sock=*(int *)arg;
-	struct timeval tv_clnt2pass = {120, 0};	// it can vary
-	struct timeval tv_serv2pass = {30, 0};	// it can vary
-	/* TODO
-		ERROR CODE implemented
-	*/
+	struct timeval tv_clnt2pass = {120, 0};	// client to proxy timeout set to 120 sec
+	struct timeval tv_serv2pass = {30, 0};	// server to proxy timeout set to 30 sec
+
 	int ERROR_CODE=0;
 	char symbol_path[SYMBOL_SIZE + 10];
 	memset(symbol_path, 0, SYMBOL_SIZE + 10);
@@ -56,52 +54,15 @@ void * handle_clnt(void * arg) {
 				return NULL;
 		}
 		printf("fd#%d - %d received\n", clnt_sock, recv_len);
+		//get packets & measure packet length
+
 		if (start_flag==1) {
 			if(recv_len==0) {
 				printf("fd#%d socket closed(cache usage estimated)\n", clnt_sock);
 				close_all(serv_sock, clnt_sock);
 				return NULL;
 			}
-
-			/* TODO
-				create METHOD variable
-				create URI variable
-				parse a line and save it to a string variable
-				parse METHOD and URI
-				  allocate METHOD, get METHOD, save it (for next todo)
-				  allocate URI, get URI, save it (for next todo)
-			*/
-			/* TODO
-				when method is GET:
-				  1. find URI in the whitelist file.
-				    if there's line
-				      end process.
-				    if not
-				      modify URI to hashed URI
-				      find hashed URI from directory
-				      if there's file
-				        create symbolic link to safe area
-				        modify hashed URI with safe area
-				        modify recv_len with hashed URI
-				      if not
-				        error
-				when method is POST or METHOD:
-				  1. find URI in the whitelist file.
-				    if there's line
-				      end process
-				    if not
-				      error
-			*/
-			/* TODO
-				free method variable
-				free URI variable
-			*/
-			printf("1\n");
 			act(msg, &recv_len, &ERROR_CODE, symbol_path);
-			printf("2\n");
-			/* TODO
-				process error code from act
-			*/
 			if (error_proc(serv_sock, clnt_sock, &ERROR_CODE, symbol_path) == ERROR_TYPE_EXIT)
 				return NULL;
 
@@ -109,6 +70,7 @@ void * handle_clnt(void * arg) {
 			start_flag = 0;
 		}
 		current_size += recv_len;
+		// pass packet to server
 		if (recv_len > 0) {
 			int pass_len = send(serv_sock, msg, recv_len, 0);
 			printf("fd#%d - %d passed\n", clnt_sock, pass_len);
@@ -138,6 +100,7 @@ void * handle_clnt(void * arg) {
 		if (error_proc(serv_sock, clnt_sock, &ERROR_CODE, symbol_path) == ERROR_TYPE_EXIT)
 			return NULL;
 	}
+	//pass server response to client
 	while (1) {
 		memset(serv_msg, 0, sizeof(serv_msg));
 		int serv_recv_len = recv(serv_sock, serv_msg, MSG_SIZE - 1, 0);
@@ -180,6 +143,7 @@ void * handle_clnt(void * arg) {
 	return NULL;
 }
 
+//get http total size (header + data)
 int get_http_size(char * msg, int recv_len, int clnt_sock) {
 	char buffer[MSG_SIZE];
 	strncpy(buffer, msg, recv_len);
@@ -220,14 +184,7 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 	char *method, *uri, *version, *first_line_end;
 	int method_len, uri_len;
 	char * delimeter = "\r\n";
-	/* TODO
-		create METHOD variable
-		create URI variable
-		parse a line and save it to a string variable
-		parse METHOD and URI
-			allocate METHOD, get METHOD, save it (for next todo)
-			allocate URI, get URI, save it (for next todo)
-	*/
+	//get uri & http method
 	method = msg;
 	printf("msg1 : %s\n", msg);
 	if (method == NULL) {
@@ -263,7 +220,7 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 	strncpy(uri_str, uri, uri_len);
 	printf("method : %s\nuri : %s\n", method_str, uri_str);
 
-	/* TODO
+	/*
 		when method is GET:
 			1. find URI in the whitelist file.
 				if there's line
@@ -338,35 +295,15 @@ int act(char *msg, int *recv_len, int *ERROR_CODE, char *symbol_path) {
 			return -1;
 		}
 		printf("5\n");
-		/*
-		if (strcmp(method_str, "GET") == 0) {
-			if (hash_load(msg, uri, uri_file_start, uri_file_pivot, uri_file_end, recv_len, symbol_path) == -1) {
-				*ERROR_CODE = 404;
-				free(method_str);
-				free(uri_str);
-				return -1;
-			}
-		}
-		else {
-			*ERROR_CODE = 404;
-			free(method_str);
-			free(uri_str);
-			return -1;
-		}
-		*/
+		
 	}
 
-	/* TODO
-	don't forget that in each return, free the allocated variables!!
-		free method variable
-		free URI variable
-	*/
 	free(method_str);
 	free(uri_str);
 	return 0;
 }
 
-/* TODO
+/* 
 	check ERROR_CODE
 		if ERROR_CODE is in some domain of error
 			check domain of error (ex) error that is ignorable, error that should be close both of serv_sock... (just for generalize))
@@ -384,37 +321,29 @@ int error_proc(int serv_sock, int clnt_sock, int *ERROR_CODE, char *symbol_path)
 		*ERROR_CODE = 0;
 		if (strlen(symbol_path) != 0) {
 			remove(symbol_path);
-			// TODO : remove symbolic link
 		}
 		return ERROR_TYPE_EXIT;
 	}
 	 else if (*ERROR_CODE > 399) {
 		if (*ERROR_CODE == 404) {
-			// TODO some action(sending error packet to client etc...)
 			char *ERROR_MSG = "HTTP/1.1 404 Not Found\r\n\r\n";
 			send(clnt_sock, ERROR_MSG, strlen(ERROR_MSG), 0);
 			close_all(serv_sock, clnt_sock);
 			*ERROR_CODE = 0;
 			if (strlen(symbol_path) != 0) {
 				remove(symbol_path);
-				// TODO : remove symbolic link
 			}
 			return ERROR_TYPE_EXIT;
 		}
-		/*
-		else if (if ERROR CODE is in some domain) {
-
-		}
-		else if (if ERROR CODE is in some domain) {
-
-		}//...
-		*/
 	}
 	else {
 		return ERROR_TYPE_NO_ERROR;
 	}
 }
 
+//get filename & hash it, use it as new uri.
+//with new uri, check directory whether new uri exists.
+//if exists, make symbolic link by symbol_num. and modify request packet with TEMP/symbolic_link file.
 int hash_load(char *msg, char *uri, char *uri_file_start, char *uri_file_pivot, char *uri_file_end, int *recv_len, char *symbol_path) {
 	char *location;
 	if (uri_file_start+1<uri_file_pivot) {
@@ -435,11 +364,11 @@ int hash_load(char *msg, char *uri, char *uri_file_start, char *uri_file_pivot, 
 			int symbol_id = get_symbol_id();
 			sprintf(symbol_path, "/var/www/html/TEMP/%d", symbol_id);
 			remove(symbol_path);
-			// TODO : remove symbolic link
+			// remove symbolic link
 			if (symlink(location, symbol_path) == -1) {
 				printf("FAIL to CREATE SYMBOLIC LINK\n");
 			}
-			// TODO : make symbolic link
+			// make symbolic link
 
 			int origin_len = uri_file_end - uri;
 			int finish_len = strlen(symbol_path) - 13;
@@ -468,14 +397,7 @@ int hash_load(char *msg, char *uri, char *uri_file_start, char *uri_file_pivot, 
 			return -1;
 		}
 	}
-	else {
-		/* with assumption that no name case is invalid, we can erase this part. ex) /.png, /.jpg */
-		/*
-		location = (char *)malloc(sizeof(char)*(uri_file_end - uri + 1));
-		memset(location, 0, uri_file_end - uri + 1);
-		memcpy(location, uri, uri_file_end - uri);
-		*/
-	}
+
 	printf("location : %s\n", location);
 	
 	free(location);
